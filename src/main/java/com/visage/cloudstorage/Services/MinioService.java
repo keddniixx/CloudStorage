@@ -1,11 +1,14 @@
 package com.visage.cloudstorage.Services;
 
 import com.visage.cloudstorage.Model.FileResource;
+import io.minio.BucketExistsArgs;
 import io.minio.GetObjectArgs;
+import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.StatObjectArgs;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -19,6 +22,14 @@ public class MinioService {
     private final MinioClient minioClient;
     @Value("${minio.bucket-name}")
     private String bucketName;
+
+    @PostConstruct
+    public void createBucketForUser() throws Exception {
+        boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
+        if (!exists) {
+            minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
+        }
+    }
 
     public void upload(InputStream input, String completePath, MultipartFile file) throws Exception {
         minioClient.putObject(PutObjectArgs.builder().bucket(bucketName).object(completePath + file.getOriginalFilename()).stream(input, file.getSize(), -1).contentType(file.getContentType()).build());

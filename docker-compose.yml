@@ -1,0 +1,36 @@
+services:
+  psql:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - storage-net
+    restart: unless-stopped
+  minio:
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9090:9090"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: miniominio
+    command: server /data --console-address ":9090"
+    volumes:
+      - minio_data:/data
+    networks:
+      - storage-net
+    restart: unless-stopped
+networks:
+  storage-net:
+    driver: bridge
+volumes:
+  postgres_data:
+  minio_data:
