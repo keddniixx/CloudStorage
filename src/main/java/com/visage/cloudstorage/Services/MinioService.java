@@ -3,18 +3,25 @@ package com.visage.cloudstorage.Services;
 import com.visage.cloudstorage.Model.FileResource;
 import io.minio.BucketExistsArgs;
 import io.minio.GetObjectArgs;
+import io.minio.ListObjectsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
+import io.minio.RemoveObjectsArgs;
 import io.minio.StatObjectArgs;
+import io.minio.messages.DeleteObject;
+import io.minio.messages.Item;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,8 +32,7 @@ public class MinioService {
 
     @PostConstruct
     public void createBucketForUser() throws Exception {
-        boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
-        if (!exists) {
+        if (!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())) {
             minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
         }
     }
@@ -56,5 +62,24 @@ public class MinioService {
 
     public void removeObject(String path) throws Exception {
         minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucketName).object(path).build());
+    }
+
+    public void createDirectory(String path) throws Exception {
+        String directoryPath = path.endsWith("/") ? path : path + "/";
+        minioClient.putObject(PutObjectArgs.builder().bucket(bucketName).object(directoryPath).stream(new ByteArrayInputStream(new byte[0]), 0, -1).build());
+    }
+
+    public void removeFolderBatch(String folderPrefix) throws Exception {
+        String prefix = folderPrefix.endsWith("/") ? folderPrefix : folderPrefix + "/";
+        List<DeleteObject> objectsToDelete = new ArrayList<>();
+        for (var result : minioClient.listObjects(ListObjectsArgs.builder().bucket(bucketName).prefix(prefix).recursive(true).build())) {
+            Item item = result.get();
+            objectsToDelete.add(new DeleteObject(item.objectName()));
+        }
+        if (!objectsToDelete.isEmpty()) {
+            for (var result : minioClient.removeObjects(RemoveObjectsArgs.builder().bucket(bucketName).objects(objectsToDelete).build())) {
+                result.get();
+            }
+        }
     }
 }
