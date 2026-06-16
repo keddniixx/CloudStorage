@@ -2,6 +2,8 @@ package com.visage.cloudstorage.Services;
 
 import com.visage.cloudstorage.Model.FileResource;
 import io.minio.BucketExistsArgs;
+import io.minio.CopyObjectArgs;
+import io.minio.CopySource;
 import io.minio.GetObjectArgs;
 import io.minio.ListObjectsArgs;
 import io.minio.MakeBucketArgs;
@@ -32,9 +34,7 @@ public class MinioService {
 
     @PostConstruct
     public void createBucketForUser() throws Exception {
-        if (!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())) {
-            minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
-        }
+        if (!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())) minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
     }
 
     public void upload(InputStream input, String completePath, MultipartFile file) throws Exception {
@@ -72,14 +72,15 @@ public class MinioService {
     public void removeFolderBatch(String folderPrefix) throws Exception {
         String prefix = folderPrefix.endsWith("/") ? folderPrefix : folderPrefix + "/";
         List<DeleteObject> objectsToDelete = new ArrayList<>();
-        for (var result : minioClient.listObjects(ListObjectsArgs.builder().bucket(bucketName).prefix(prefix).recursive(true).build())) {
-            Item item = result.get();
-            objectsToDelete.add(new DeleteObject(item.objectName()));
-        }
-        if (!objectsToDelete.isEmpty()) {
-            for (var result : minioClient.removeObjects(RemoveObjectsArgs.builder().bucket(bucketName).objects(objectsToDelete).build())) {
-                result.get();
-            }
-        }
+        for (var result : minioClient.listObjects(ListObjectsArgs.builder().bucket(bucketName).prefix(prefix).recursive(true).build())) objectsToDelete.add(new DeleteObject(result.get().objectName()));
+        if (!objectsToDelete.isEmpty()) for (var result : minioClient.removeObjects(RemoveObjectsArgs.builder().bucket(bucketName).objects(objectsToDelete).build())) result.get();
+    }
+
+    public Iterable<io.minio.Result<Item>> getObjects(String prefix, boolean recursive) {
+        return minioClient.listObjects(ListObjectsArgs.builder().bucket(bucketName).prefix(prefix).recursive(recursive).build());
+    }
+
+    public void copy(String source, String destination) throws Exception {
+        minioClient.copyObject(CopyObjectArgs.builder().bucket(bucketName).object(destination).source(CopySource.builder().bucket(bucketName).object(source).build()).build());
     }
 }
