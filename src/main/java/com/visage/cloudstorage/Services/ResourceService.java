@@ -5,11 +5,13 @@ import com.visage.cloudstorage.Exceptions.NotCorrectNameFileOrPackage;
 import com.visage.cloudstorage.Exceptions.ParentFileIsAlreadyExists;
 import com.visage.cloudstorage.Model.FileResource;
 import com.visage.cloudstorage.Model.User;
+import com.visage.cloudstorage.Events.FileUploadEvent;
 import io.minio.Result;
 import io.minio.errors.*;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,7 @@ import java.util.zip.ZipOutputStream;
 public class ResourceService {
 
     private final MinioService minioService;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public FileResource resource(Integer userId, String path)  {
         String acceptPath = "the" + userId + "/" + path;
@@ -198,6 +201,9 @@ public class ResourceService {
             }
             try {
                 minioService.upload(file.getInputStream(), base, file);
+                if (file.getSize() > 500 * 1024) {
+                    kafkaTemplate.send("file-upload-topic", new FileUploadEvent(user.getUsername(), file.getOriginalFilename(), file.getSize()));
+                }
             } catch (Exception e) {
                 throw new RuntimeException();
             }
