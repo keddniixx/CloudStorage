@@ -37,9 +37,9 @@ public class RedisSaveSassionConfig {
         serializer.setCookieName("SESSION");
         serializer.setCookiePath("/");
         serializer.setDomainNamePattern("^.+?\\.(\\w+\\.\\w+)$");
-        serializer.setSameSite("Lax");
+        serializer.setSameSite("Lax"); // Для локальной разработки между 8081 и 8080
         serializer.setUseHttpOnlyCookie(true);
-        serializer.setUseSecureCookie(false);
+        serializer.setUseSecureCookie(false); // Нужно false для HTTP (localhost)
         return serializer;
     }
 

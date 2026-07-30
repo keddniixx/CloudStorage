@@ -71,6 +71,7 @@ public class ResourceController {
     public ResponseEntity<?> delete(@RequestParam("path") String path,
                                     @AuthenticationPrincipal User user) {
         validatePath(path);
+        System.out.println(resourceService.deleteResource(path, user.getId()));
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 

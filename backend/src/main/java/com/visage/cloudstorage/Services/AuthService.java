@@ -64,6 +64,7 @@ public class AuthService {
         }
         session.setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
         
+        // Ensure session is persisted
         ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
                 .getRequest().getSession(false);
 
@@ -100,6 +101,7 @@ public class AuthService {
         }
         session.setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
         
+        // Ensure session is persisted
         ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
                 .getRequest().getSession(false);
 

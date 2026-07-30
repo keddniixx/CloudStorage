@@ -169,7 +169,7 @@ public class ResourceService {
                     .size(file.getSize())
                     .type("FILE")
                     .build();
-            if (files.size() > 1) {
+            if (files.size() > 1) { // баг если папка в папке будет то она заменится и ошибка не отработает
                 String name = fileResource.getName();
                 String[] split = name.split("");
                 int count = 0;
@@ -201,6 +201,7 @@ public class ResourceService {
             }
             try {
                 minioService.upload(file.getInputStream(), base, file);
+                // Notification Logic
                 if (file.getSize() > 500 * 1024) {
                     kafkaTemplate.send("file-upload-topic", new FileUploadEvent(user.getUsername(), file.getOriginalFilename(), file.getSize()));
                 }

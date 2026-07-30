@@ -62,6 +62,22 @@ services:
     networks:
       - storage-net
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cloud-storage-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - psql
+      - minio
+      - redis
+      - kafka
+    networks:
+      - storage-net
+    restart: unless-stopped
+
   notification-service:
     build:
       context: ./notification-service

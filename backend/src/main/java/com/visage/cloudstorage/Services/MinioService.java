@@ -106,7 +106,8 @@ public class MinioService {
         );
 
         for (Result<DeleteError> err : errors) {
-            err.get();
+            System.err.println("Unable to delete object " +
+                    err.get().objectName() + ": " + err.get().message());
         }
     }
 
